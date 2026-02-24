@@ -1,10 +1,8 @@
-*.py[cod]
-.web
-.states
-assets/external/
 ﻿venv/
+.venv/
 .web/
 __pycache__/
 *.db
 *.pyc
 .DS_Store
+alembic/
