@@ -1,29 +1,38 @@
-﻿import base64
-import os
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+﻿import hashlib
+import secrets
+import re
 
 class VaultSecurity:
     @staticmethod
-    def derive_key(password: str, salt: bytes) -> bytes:
-        """Derives a 32-byte key from a password and salt."""
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
+    def validate_secure_password(password: str) -> bool:
+        """
+        Enforces standard secure password requirements:
+        - 8+ characters
+        - 1 Uppercase, 1 Lowercase
+        - 1 Number
+        - 1 Special character
+        """
+        if len(password) < 8: return False
+        if not re.search(r"[A-Z]", password): return False
+        if not re.search(r"[a-z]", password): return False
+        if not re.search(r"[0-9]", password): return False
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password): return False
+        return True
+
+    @staticmethod
+    def hash_admin_credentials(password: str, salt: str = None):
+        """Salts and hashes a password using PBKDF2-SHA256."""
+        if salt is None:
+            salt = secrets.token_hex(16)
+        key = hashlib.pbkdf2_hmac(
+            'sha256', 
+            password.encode('utf-8'), 
+            salt.encode('utf-8'), 
+            100000
         )
-        return base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        return key.hex(), salt
 
     @staticmethod
-    def encrypt_data(data: str, key: bytes) -> str:
-        """Encrypts a string using the derived key."""
-        f = Fernet(key)
-        return f.encrypt(data.encode()).decode()
-
-    @staticmethod
-    def decrypt_data(token: str, key: bytes) -> str:
-        """Decrypts a token using the derived key."""
-        f = Fernet(key)
-        return f.decrypt(token.encode()).decode()
+    def derive_key(password: str, salt: bytes) -> bytes:
+        """Used for deriving the RAM encryption key for PII data."""
+        return hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)[:32]

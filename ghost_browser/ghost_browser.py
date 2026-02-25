@@ -5,13 +5,7 @@ from .state import State
 def index() -> rx.Component:
     """The main entry page of the Ghost Browser."""
     return rx.fragment(
-        rx.box(
-            rx.color_mode.button(),
-            position="fixed",
-            top="1rem",
-            right="1rem",
-            z_index="1000",
-        ),
+        # The overlapping floating button has been removed from here.
         dashboard_view(),
     )
 
@@ -23,4 +17,4 @@ app = rx.App(
         accent_color="iris"
     ),
 )
-app.add_page(index, title="Ghost Browser | Private Hub")
+app.add_page(index, title="Ghost Browser | Private Hub", on_load=State.on_load)
