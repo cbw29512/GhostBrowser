@@ -1,10 +1,10 @@
-﻿import reflex as rx
+import reflex as rx
 from ..state import State
 
 COMMON_URLS = [
-    "https://www.youtube.com", "https://www.chase.com", 
-    "https://www.google.com", "https://www.amazon.com", 
-    "https://www.reddit.com", "https://www.netflix.com", 
+    "https://www.youtube.com", "https://www.chase.com",
+    "https://www.google.com", "https://www.amazon.com",
+    "https://www.reddit.com", "https://www.netflix.com",
     "https://www.proton.me", "https://www.bankofamerica.com"
 ]
 
@@ -21,7 +21,7 @@ def pii_vault_drawer():
                         rx.drawer.close(rx.icon_button(rx.icon("x"), variant="ghost", color_scheme="gray")),
                         width="100%"
                     ),
-                    rx.text("Auto-fill data. AES-128 encrypted on disk.", color="gray"),
+                    rx.text("Auto-fill data. AES-128 Fernet encrypted on disk.", color="gray"),
                     rx.divider(),
                     rx.scroll_area(
                         rx.vstack(
@@ -50,14 +50,20 @@ def pii_vault_drawer():
         direction="right",
     )
 
-def ghost_card(card):
+def ghost_card(card: rx.Var):
     return rx.card(
         rx.vstack(
             rx.hstack(
                 rx.heading(card.display_name, size="4"),
                 rx.spacer(),
-                rx.icon_button(rx.icon("pencil"), size="1", variant="ghost", color_scheme="gray", on_click=lambda: State.prepare_edit(card)),
-                rx.icon_button(rx.icon("trash-2"), size="1", variant="ghost", color_scheme="red", on_click=lambda: State.delete_card(card.id)),
+                rx.icon_button(
+                    rx.icon("pencil"), size="1", variant="ghost", color_scheme="gray",
+                    on_click=State.prepare_edit(card)
+                ),
+                rx.icon_button(
+                    rx.icon("trash-2"), size="1", variant="ghost", color_scheme="red",
+                    on_click=State.delete_card(card.id)
+                ),
                 width="100%"
             ),
             rx.text(card.target_url, size="1", color="gray"),
@@ -66,7 +72,11 @@ def ghost_card(card):
                 rx.badge(rx.icon("shield-check", size=12), "PII Authorized", color_scheme="orange", variant="soft"),
                 rx.badge(rx.icon("shield-off", size=12), "PII Denied", color_scheme="gray", variant="outline")
             ),
-            rx.button("Launch Ghost", on_click=lambda: State.launch_ghost_session(card.target_url), width="100%", variant="soft", color_scheme="iris"),
+            rx.button(
+                "Launch Ghost",
+                on_click=State.launch_ghost_session(card.target_url),
+                width="100%", variant="soft", color_scheme="iris"
+            ),
             align="start", spacing="2", width="100%"
         ),
         width="280px",
@@ -78,8 +88,16 @@ def edit_site_modal():
             rx.dialog.title("Edit Ghost Site"),
             rx.vstack(
                 rx.input(value=State.edit_site_name, on_change=State.set_edit_site_name, width="100%"),
-                rx.input(value=State.edit_site_url, on_change=State.set_edit_site_url, width="100%", custom_attrs={"list": "url-suggestions"}),
-                rx.checkbox("Authorize PII Injection", checked=State.edit_authorize_pii, on_change=State.set_edit_authorize_pii, color_scheme="orange"),
+                rx.input(
+                    value=State.edit_site_url, on_change=State.set_edit_site_url,
+                    width="100%", custom_attrs={"list": "url-suggestions"}
+                ),
+                rx.checkbox(
+                    "Authorize PII Injection",
+                    checked=State.edit_authorize_pii,
+                    on_change=State.set_edit_authorize_pii,
+                    color_scheme="orange"
+                ),
                 rx.hstack(
                     rx.button("Cancel", variant="soft", color_scheme="gray", on_click=State.cancel_edit),
                     rx.button("Save Changes", on_click=State.save_edit, color_scheme="iris"),
@@ -98,8 +116,15 @@ def add_site_modal():
             rx.dialog.title("Add New Ghost Site"),
             rx.vstack(
                 rx.input(placeholder="Site Name", on_change=State.set_new_site_name, width="100%"),
-                rx.input(placeholder="Select or Type URL...", on_change=State.set_new_site_url, width="100%", custom_attrs={"list": "url-suggestions"}),
-                rx.html('<datalist id="url-suggestions">' + ''.join([f'<option value="{u}"></option>' for u in COMMON_URLS]) + '</datalist>'),
+                rx.input(
+                    placeholder="Select or Type URL...", on_change=State.set_new_site_url,
+                    width="100%", custom_attrs={"list": "url-suggestions"}
+                ),
+                rx.html(
+                    '<datalist id="url-suggestions">'
+                    + ''.join([f'<option value="{u}"></option>' for u in COMMON_URLS])
+                    + '</datalist>'
+                ),
                 rx.checkbox("Authorize PII Injection for this site", on_change=State.set_new_authorize_pii, color_scheme="orange"),
                 rx.hstack(
                     rx.dialog.close(rx.button("Cancel", variant="soft", color_scheme="gray")),
@@ -113,16 +138,20 @@ def add_site_modal():
 
 def browser_portal():
     return rx.vstack(
-        rx.hstack(
-            rx.badge("LIVE SESSION", color_scheme="red", variant="outline"),
-            rx.spacer(),
-            rx.link(rx.button(rx.icon("external-link"), "Pop Out Window", variant="soft", color_scheme="blue"), href=State.browser_url, is_external=True),
-            rx.button("Kill Session & Wipe RAM", on_click=State.terminate_session, color_scheme="red"),
-            width="100%"
-        ),
+        # ARCHITECT FIX: All secondary header bars and warnings deleted!
+        # Only the raw iframe remains, stretched to 85vh.
         rx.box(
-            rx.html(f'<iframe src="{State.browser_url}" style="width:100%; height:80vh; border:none; border-radius:10px; background-color: #1a1a1a;"></iframe>'),
-            width="100%", height="80vh", border_radius="10px", overflow="hidden"
+            rx.el.iframe(
+                src=State.browser_url,
+                style={
+                    "width": "100%",
+                    "height": "85vh",
+                    "border": "none",
+                    "border_radius": "8px",
+                    "background_color": "#1a1a1a",
+                }
+            ),
+            width="100%", height="85vh", border_radius="8px", overflow="hidden"
         ),
         width="100%",
     )
@@ -139,7 +168,6 @@ def loading_screen():
     )
 
 def setup_splash_screen():
-    """First-time setup screen to create the master Admin."""
     return rx.center(
         rx.card(
             rx.vstack(
@@ -149,7 +177,10 @@ def setup_splash_screen():
                 rx.input(placeholder="Admin Username", on_change=State.set_setup_username, width="100%"),
                 rx.input(placeholder="Master Password", type="password", on_change=State.set_setup_password, width="100%"),
                 rx.input(placeholder="Confirm Password", type="password", on_change=State.set_setup_confirm, width="100%"),
-                rx.text("Password must be 8+ chars, with an uppercase, lowercase, number, and special character.", size="1", color="gray"),
+                rx.text(
+                    "Password must be 8+ chars, with an uppercase, lowercase, number, and special character.",
+                    size="1", color="gray"
+                ),
                 rx.button("Initialize Vault", on_click=State.create_admin, color_scheme="iris", width="100%"),
                 align="center", spacing="4", padding="2em"
             ),
@@ -180,7 +211,10 @@ def main_dashboard():
                 rx.cond(
                     State.site_cards,
                     rx.flex(rx.foreach(State.site_cards, ghost_card), flex_wrap="wrap", spacing="4", padding="2em"),
-                    rx.center(rx.button(rx.icon("download"), "Load Starter Cards", on_click=State.on_load, size="4", color_scheme="green"), padding_top="10vh", width="100%")
+                    rx.center(
+                        rx.button(rx.icon("download"), "Load Starter Cards", on_click=State.on_load, size="4", color_scheme="green"),
+                        padding_top="10vh", width="100%"
+                    )
                 )
             )
         ),
@@ -194,7 +228,20 @@ def dashboard_view():
         rx.hstack(
             rx.heading("Ghost Hub", size="7"),
             rx.spacer(),
-            # UI Controls: Only show if Admin exists and Vault is Unlocked
+            
+            # ARCHITECT FIX: Moved the active session controls to the top bar!
+            rx.cond(
+                State.is_browser_running,
+                rx.hstack(
+                    rx.badge(rx.icon("shield-check", size=14), "Pinned: ", rx.text.strong(State.active_domain), color_scheme="orange", variant="solid"),
+                    rx.button(rx.icon("external-link"), "Pop Out", variant="solid", color_scheme="blue", on_click=State.pop_out_session, cursor="pointer"),
+                    rx.button("Kill Session", on_click=State.terminate_session, color_scheme="red"),
+                    rx.divider(orientation="vertical", height="2em"),
+                    spacing="4",
+                    align_items="center",
+                )
+            ),
+
             rx.cond(
                 State.has_admin & State.is_vault_unlocked,
                 rx.hstack(
@@ -204,27 +251,27 @@ def dashboard_view():
                     rx.badge("Vault Unlocked", color_scheme="green"),
                     rx.button(rx.icon("lock"), "Lock Vault", on_click=State.lock_vault, color_scheme="red", variant="soft")
                 ),
-                # If Locked, but Admin exists, show Login Controls
                 rx.cond(
                     State.has_admin,
                     rx.hstack(
                         rx.color_mode.button(),
                         rx.input(placeholder="Username", on_change=State.set_login_username),
-                        rx.input(placeholder="Master Password", type="password", value=State.master_password_input, on_change=State.set_master_password_input),
+                        rx.input(
+                            placeholder="Master Password", type="password",
+                            value=State.master_password_input, on_change=State.set_master_password_input
+                        ),
                         rx.button("Unlock", on_click=State.unlock_vault),
                     ),
-                    rx.color_mode.button() # If Setup Screen, just show theme toggle
+                    rx.color_mode.button()
                 )
             ),
-            width="100%", padding="1em", border_bottom="1px solid var(--gray-4)",
+            width="100%", padding="1em", border_bottom="1px solid var(--gray-4)", align_items="center",
         ),
-        
         # --- DYNAMIC BODY ---
         rx.cond(
             State.has_admin,
             rx.cond(State.is_vault_unlocked, main_dashboard(), locked_splash_screen()),
-            setup_splash_screen() # Shows if DB is totally empty
+            setup_splash_screen()
         ),
         width="100%",
     )
-

@@ -1,2 +1,5 @@
-
 reflex==0.8.27
+docker
+httpx
+sqlmodel
+cryptography
