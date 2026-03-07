@@ -11,3 +11,9 @@ Ghost Browser is part of this broader effort. The project explores an alternativ
 Christopher maintains Ghost Browser as an open-source project in order to encourage transparency, independent security review, and collaboration with other developers interested in privacy-preserving computing and defensive software design.
 
 His long-term goal is to contribute practical open-source tools that help improve security awareness, reduce unnecessary system exposure, and provide users with more trustworthy computing environments.
+
+## Background
+
+Christopher Wilson previously served in the United States military and currently lives with a disability. These experiences have shaped his perspective on resilience, security, and the importance of reliable and accessible technology.
+
+They also contribute to his commitment to building open-source tools that prioritize transparency, privacy, and user control.
