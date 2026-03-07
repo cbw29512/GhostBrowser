@@ -1,1 +1,6 @@
-
+grant_name,funder,deadline,status,amount,angle,requirements,repo_ready,summary_ready,budget_ready,submitted,notes
+NLnet Open Source Fund,NLnet Foundation,,researching,,privacy/security,"Open source project improving internet freedom",yes,yes,yes,no,
+Mozilla Technology Fund,Mozilla Foundation,,researching,,privacy,"Open internet privacy tools",yes,yes,yes,no,
+GitHub Secure Open Source Fund,GitHub,,researching,,security,"Security improvements to open source ecosystem",yes,yes,yes,no,
+Prototype Fund,Open Knowledge Foundation,,researching,,open-source,"Public interest technology projects",yes,yes,yes,no,
+Knight Prototype Fund,Knight Foundation,,researching,,privacy,"Technology improving internet trust and safety",yes,yes,yes,no,
