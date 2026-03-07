@@ -591,43 +591,52 @@
 
     /* ─── FOOTER ─── */
     footer {
-      position: relative;
-      z-index: 1;
-      padding: 2.5rem 5%;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 44px;
+      padding: 0 4%;
+      background: rgba(5, 12, 24, 0.94);
+      backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
+      gap: 1.5rem;
     }
+
+    /* push page content above sticky footer */
+    body { padding-bottom: 44px; }
 
     .footer-brand {
       font-family: 'Oxanium', monospace;
-      font-size: 0.95rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: var(--muted);
       text-decoration: none;
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
     .footer-brand:hover { color: var(--accent); }
 
     .footer-links {
       display: flex;
-      gap: 2rem;
+      gap: 1.5rem;
       list-style: none;
     }
     .footer-links a {
-      font-size: 0.82rem;
+      font-size: 0.75rem;
       color: var(--muted);
       text-decoration: none;
       transition: color 0.2s;
+      white-space: nowrap;
     }
     .footer-links a:hover { color: var(--accent); }
 
     .footer-copy {
-      font-size: 0.78rem;
-      color: rgba(96,128,160,0.5);
+      font-size: 0.72rem;
+      color: rgba(96,128,160,0.45);
+      white-space: nowrap;
     }
 
     /* ─── ANIMATIONS ─── */
@@ -1035,6 +1044,12 @@
         Full Roadmap →
       </a>
     </div>
+    <p style="margin-top:2rem;font-size:0.9rem;color:var(--muted);">
+      Or reach us directly at
+      <a href="mailto:GhostBrowserProject@proton.me" style="color:var(--accent);text-decoration:none;font-weight:600;">
+        GhostBrowserProject@proton.me
+      </a>
+    </p>
   </div>
 </section>
 
@@ -1046,6 +1061,7 @@
     <li><a href="https://github.com/cbw29512/GhostBrowser/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
     <li><a href="https://github.com/cbw29512/GhostBrowser/blob/main/GHOST_MANIFESTO.md" target="_blank" rel="noopener">Manifesto</a></li>
     <li><a href="https://github.com/cbw29512/GhostBrowser/blob/main/ROADMAP.md" target="_blank" rel="noopener">Roadmap</a></li>
+    <li><a href="mailto:GhostBrowserProject@proton.me">Contact</a></li>
   </ul>
   <span class="footer-copy">© 2026 Chris Wilson · MIT License · Open Source</span>
 </footer>
