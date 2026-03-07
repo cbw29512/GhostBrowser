@@ -95,6 +95,10 @@ The project encourages community review, collaboration, and independent security
 
 ---
 
+## Project Status
+
+The Ghost Browser project is currently in the architecture and prototype planning stage. Initial documentation, security models, and development roadmaps are publicly available in the project repository.
+
 ## Repository
 
 https://github.com/cbw29512/GhostBrowser
