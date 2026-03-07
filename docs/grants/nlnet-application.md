@@ -102,3 +102,5 @@ The Ghost Browser project is currently in the architecture and prototype plannin
 ## Repository
 
 https://github.com/cbw29512/GhostBrowser
+
+Ghost Browser contributes to the development of open privacy-preserving internet infrastructure by exploring safer browsing architectures that can be freely studied, improved, and reused.
