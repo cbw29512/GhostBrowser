@@ -1,125 +1,73 @@
+
 # Ghost Browser
 
-Ghost Browser is an open-source ephemeral secure browsing environment designed
-to provide a temporary, high-trust workspace for sensitive tasks.
+Ghost Browser is an open-source experimental secure browsing environment designed to minimize persistent artifacts left behind after web browsing sessions.
 
-The long-term goal of the project is to create a portable browser-based
-environment capable of running entirely in RAM, minimizing persistent data
-artifacts and allowing users to launch secure browsing sessions from portable
-media such as a USB drive.
+Modern browsers retain significant amounts of session data including cookies, cache files, and local storage artifacts. Ghost Browser explores an alternative model: a disposable browsing environment where each session runs in a controlled runtime environment and attempts to minimize residual data after shutdown.
 
-When a session ends, temporary runtime artifacts can be destroyed to reduce
-forensic residue and protect user privacy.
+The project investigates architectural approaches that may help improve privacy-focused browsing workflows and reduce persistent system artifacts.
 
 ---
 
-# Project Vision
+# Project Goals
 
-Modern browsers accumulate large amounts of persistent data including:
+Ghost Browser focuses on several core ideas:
 
-- cookies
-- cached files
-- session tokens
-- credential artifacts
-- local storage
-- extension data
+• ephemeral browsing environments  
+• minimized persistent storage  
+• controlled session lifecycle  
+• privacy-focused runtime design  
+• transparent open-source development
 
-Even private browsing modes can leave traces.
-
-Ghost Browser aims to provide an **ephemeral browsing workspace** where
-temporary runtime state is minimized and controlled.
-
-The system is designed to prioritize:
-
-- privacy
-- security
-- portability
-- open architecture
-- transparency
+Rather than functioning as a traditional daily-use browser, Ghost Browser is designed as a **research and experimentation platform** for secure browsing architectures.
 
 ---
 
-# Long Term Goal
+# Long-Term Vision
 
-Ghost Browser will eventually support:
+The long-term vision of Ghost Browser includes exploring:
 
-• RAM-resident session environments  
-• Portable USB deployment  
-• Minimal operating environment  
-• Secure teardown of runtime artifacts  
-• Hardened browser runtime configuration  
+• disposable browsing sessions  
+• runtime environments with minimal persistence  
+• portable execution models  
+• RAM-first runtime strategies  
+• transparent security architecture
 
-This allows users to launch a **trusted temporary workspace**
-without modifying the host system.
+Future iterations may investigate the possibility of launching a temporary browsing environment from portable media such as a USB device while minimizing long-term host-system artifacts.
 
 ---
 
 # Potential Use Cases
 
-Ghost Browser may be useful for:
+Ghost Browser may benefit several communities:
 
-• security researchers  
-• privacy-focused users  
-• journalists  
-• travelers using untrusted systems  
-• cybersecurity students  
-• open-source experimentation  
+Cybersecurity professionals investigating unknown websites.
 
----
+Privacy-focused users seeking browsing environments that minimize residual artifacts.
 
-# Architecture Direction
+Researchers studying browser security architecture.
 
-The project will evolve around several components:
-User
-↓
-Ghost Browser Launcher
-↓
-Ephemeral Runtime Layer
-↓
-Hardened Browser Instance
-↓
-RAM State Manager
-↓
-Secure Teardown Engine
+Developers interested in privacy-preserving software design.
 
+Students learning about secure runtime environments.
 
 ---
 
-# Development Roadmap
+# Project Status
 
-## Phase 1
-Initial secure browser runtime prototype
+Ghost Browser is currently in the **architecture and research phase**.
 
-## Phase 2
-Ephemeral session lifecycle management
+Current development focuses on:
 
-## Phase 3
-RAM-first runtime environment
+• defining the security model  
+• documenting architecture  
+• designing the session lifecycle  
+• exploring prototype runtime environments
 
-## Phase 4
-Portable deployment architecture
-
-## Phase 5
-USB-bootable secure browsing workspace
+Implementation work will evolve gradually as the architecture matures.
 
 ---
 
-# Open Source
+# Documentation
 
-Ghost Browser is fully open source.
-
-Community collaboration is encouraged.
-
-Contributions may include:
-
-- code
-- documentation
-- architecture suggestions
-- testing
-- security review
-
----
-
-# License
-
-MIT License
+Project documentation is available in the repository:
