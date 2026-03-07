@@ -8,9 +8,9 @@ He is particularly interested in exploring how modern systems can be redesigned 
 
 Ghost Browser is part of this broader effort. The project explores an alternative approach to browser environments by emphasizing ephemeral execution, minimized persistent artifacts, and portable secure workspaces that can eventually operate primarily in memory.
 
-Christopher maintains Ghost Browser as an open-source project in order to encourage transparency, independent security review, and collaboration with other developers interested in privacy-preserving computing and defensive software design.
+Christopher maintains Ghost Browser as an open-source project in order to encourage transparency, independent security review, and collaboration with developers interested in privacy-preserving computing and defensive software design.
 
-His long-term goal is to contribute practical open-source tools that help improve security awareness, reduce unnecessary system exposure, and provide users with more trustworthy computing environments.
+His long-term goal is to contribute practical open-source tools that improve security awareness, reduce unnecessary system exposure, and provide users with more trustworthy computing environments.
 
 ## Background
 
