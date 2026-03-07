@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghost Browser — Ephemeral Secure Browsing Research Platform</title>
+  <meta name="description" content="An open-source research platform exploring disposable, privacy-preserving browser architectures with Docker isolation and encrypted credential management." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=Syne:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #050c18;
+      --bg2:      #081020;
+      --surface:  #0b1628;
+      --surface2: #0f1e38;
+      --border:   rgba(0, 200, 240, 0.10);
+      --border-h: rgba(0, 200, 240, 0.30);
+      --accent:   #00c8f0;
+      --accent2:  #00f0b0;
+      --amber:    #f0a840;
+      --text:     #d8e8f8;
+      --muted:    #6080a0;
+      --head:     #eaf4ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ─── ANIMATED BACKGROUND ─── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      background: rgba(5, 12, 24, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      font-family: 'Oxanium', monospace;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--head);
+      letter-spacing: 0.05em;
+    }
+    .nav-brand svg { flex-shrink: 0; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    .btn-nav {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.4rem 1rem;
+      border-radius: 4px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-nav:hover { background: var(--accent); color: var(--bg); }
+
+    /* ─── HERO ─── */
+    #hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 130px 6% 80px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid rgba(0,200,240,0.28);
+      background: rgba(0,200,240,0.06);
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.38rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 2.2rem;
+      animation: fadeDown 0.7s ease both;
+    }
+    .pulse-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 2s infinite;
+    }
+
+    h1 {
+      font-family: 'Oxanium', monospace;
+      font-size: clamp(3.2rem, 8vw, 6.8rem);
+      font-weight: 800;
+      color: var(--head);
+      line-height: 0.95;
+      letter-spacing: -0.015em;
+      animation: fadeDown 0.85s 0.1s ease both;
+      opacity: 0;
+      margin-bottom: 0.15em;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--muted);
+      font-weight: 400;
+      max-width: 660px;
+      margin: 1.4rem auto 2.8rem;
+      line-height: 1.75;
+      animation: fadeDown 0.9s 0.2s ease both;
+      opacity: 0;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeDown 1s 0.35s ease both;
+      opacity: 0;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 0.78rem 1.7rem;
+      border-radius: 5px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-2px); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 0.78rem 1.7rem;
+      border-radius: 5px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 500;
+      font-size: 0.92rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    .hero-meta {
+      margin-top: 5rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 3.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 800px;
+      width: 100%;
+      animation: fadeUp 1s 0.5s ease both;
+      opacity: 0;
+    }
+    .meta-stat { text-align: center; }
+    .meta-val {
+      font-family: 'Oxanium', monospace;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--head);
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .meta-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ─── SECTION BASICS ─── */
+    section { position: relative; z-index: 1; }
+    .surface { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 96px 5%;
+    }
+
+    .sec-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.7rem;
+    }
+
+    h2 {
+      font-family: 'Oxanium', monospace;
+      font-size: clamp(1.75rem, 3.5vw, 2.7rem);
+      font-weight: 700;
+      color: var(--head);
+      line-height: 1.12;
+      margin-bottom: 1rem;
+    }
+
+    .sec-desc {
+      color: var(--muted);
+      font-size: 1.02rem;
+      font-weight: 400;
+      max-width: 580px;
+      line-height: 1.75;
+    }
+
+    /* ─── ABOUT ─── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+      margin-top: 3.5rem;
+    }
+
+    .about-copy p {
+      color: var(--muted);
+      font-size: 0.97rem;
+      line-height: 1.85;
+      margin-bottom: 1.1rem;
+    }
+    .about-copy p strong { color: var(--text); font-weight: 600; }
+    .about-copy p:last-child { margin-bottom: 0; }
+
+    .code-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .code-panel-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 0.65rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .code-dot.red   { background: #ff5f57; }
+    .code-dot.yel   { background: #febc2e; }
+    .code-dot.grn   { background: #28c840; }
+    .code-panel-filename {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+      letter-spacing: 0.05em;
+    }
+    .code-body {
+      padding: 1.4rem 1.5rem;
+      font-family: 'Oxanium', monospace;
+      font-size: 0.8rem;
+      line-height: 2.0;
+      color: var(--muted);
+    }
+    .ln { color: rgba(0,200,240,0.25); user-select: none; margin-right: 1.1rem; }
+    .kw  { color: var(--accent2); }
+    .fn  { color: var(--accent); }
+    .str { color: var(--amber); }
+    .cm  { color: #3a5570; font-style: italic; }
+    .cls { color: #c792ea; }
+
+    /* ─── PILLARS ─── */
+    .pillars-header { margin-bottom: 3.5rem; }
+
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.4rem;
+    }
+
+    .pillar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.8rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+    .pillar::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .pillar:hover { border-color: var(--border-h); transform: translateY(-3px); }
+    .pillar:hover::after { opacity: 1; }
+
+    .pillar-icon {
+      width: 42px; height: 42px;
+      border-radius: 8px;
+      background: rgba(0,200,240,0.08);
+      border: 1px solid rgba(0,200,240,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.1rem;
+      font-size: 1.15rem;
+    }
+
+    .pillar h3 {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--head);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+    .pillar p { font-size: 0.87rem; color: var(--muted); line-height: 1.7; }
+
+    /* ─── USE CASES ─── */
+    .uc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.4rem;
+      margin-top: 3.5rem;
+    }
+
+    .uc-card {
+      display: flex;
+      gap: 1.4rem;
+      align-items: flex-start;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.7rem;
+      transition: border-color 0.2s;
+    }
+    .uc-card:hover { border-color: var(--border-h); }
+
+    .uc-num {
+      font-family: 'Oxanium', monospace;
+      font-size: 2rem;
+      font-weight: 800;
+      color: rgba(0,200,240,0.18);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 2.8rem;
+      text-align: right;
+    }
+    .uc-body h3 {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--head);
+      margin-bottom: 0.35rem;
+    }
+    .uc-body p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; }
+
+    /* ─── ARCHITECTURE ─── */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 4rem;
+      margin-top: 3.5rem;
+      align-items: start;
+    }
+
+    .arch-layers { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .arch-row {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.95rem 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.2s;
+    }
+    .arch-row:hover { border-color: var(--border-h); }
+
+    .layer-badge {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+      color: var(--bg);
+    }
+    .lb-cyan   { background: var(--accent); }
+    .lb-green  { background: var(--accent2); }
+    .lb-amber  { background: var(--amber); }
+    .lb-purple { background: #a78bfa; }
+
+    .arch-row-text h4 {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--head);
+    }
+    .arch-row-text p { font-size: 0.78rem; color: var(--muted); }
+
+    .stack-items { display: flex; flex-direction: column; gap: 1.6rem; }
+    .stack-item h4 {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--head);
+      margin-bottom: 0.3rem;
+    }
+    .stack-item p { font-size: 0.86rem; color: var(--muted); line-height: 1.7; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
+    .tag {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: rgba(0,200,240,0.07);
+      border: 1px solid rgba(0,200,240,0.18);
+      padding: 0.18rem 0.55rem;
+      border-radius: 3px;
+    }
+    .tag.green { color: var(--accent2); background: rgba(0,240,176,0.07); border-color: rgba(0,240,176,0.18); }
+    .tag.amber { color: var(--amber); background: rgba(240,168,64,0.07); border-color: rgba(240,168,64,0.18); }
+
+    /* ─── ROADMAP ─── */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.2rem;
+      margin-top: 3.5rem;
+    }
+
+    .phase {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.6rem 1.4rem;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .phase:hover { border-color: var(--border-h); }
+    .phase.active { border-color: rgba(0,200,240,0.4); }
+    .phase.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 10px 10px 0 0;
+    }
+
+    .phase-num {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+    .phase-status {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.55rem;
+      border-radius: 3px;
+      margin-bottom: 1rem;
+    }
+    .status-active   { background: rgba(0,200,240,0.12); color: var(--accent); border: 1px solid rgba(0,200,240,0.3); }
+    .status-planned  { background: rgba(96,128,160,0.12); color: var(--muted); border: 1px solid rgba(96,128,160,0.2); }
+    .status-future   { background: rgba(96,128,160,0.07); color: rgba(96,128,160,0.6); border: 1px solid rgba(96,128,160,0.1); }
+
+    .phase h3 {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--head);
+      margin-bottom: 0.75rem;
+    }
+    .phase ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .phase ul li {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding-left: 1rem;
+      position: relative;
+    }
+    .phase ul li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ─── CTA STRIP ─── */
+    #cta {
+      background: linear-gradient(135deg, #060f22 0%, #081524 50%, #060f22 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cta-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 96px 5%;
+      text-align: center;
+    }
+    .cta-inner h2 { margin-bottom: 1rem; }
+    .cta-inner .sec-desc { margin: 0 auto 2.5rem; text-align: center; }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 2.5rem 5%;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-brand {
+      font-family: 'Oxanium', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+    }
+    .footer-brand:hover { color: var(--accent); }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    .footer-links a {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 0.78rem;
+      color: rgba(96,128,160,0.5);
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ─── REVEAL ON SCROLL ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .about-grid, .arch-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .pillar-grid { grid-template-columns: 1fr 1fr; }
+      .phase-grid  { grid-template-columns: 1fr 1fr; }
+      .uc-grid     { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .pillar-grid { grid-template-columns: 1fr; }
+      .phase-grid  { grid-template-columns: 1fr; }
+      .nav-links   { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Animated grid background -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a class="nav-brand" href="#">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00c8f0" stroke-width="1.5"/>
+      <path d="M7 9.5C7 7.5 9 6 11 6s4 1.5 4 3.5v4L13 16l-2-1-2 1-2-1.5z" fill="#00c8f0" fill-opacity="0.15" stroke="#00c8f0" stroke-width="1.2"/>
+      <circle cx="9" cy="10" r="1" fill="#00c8f0"/>
+      <circle cx="13" cy="10" r="1" fill="#00c8f0"/>
+    </svg>
+    Ghost Browser
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#pillars">Features</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+  <a class="btn-nav" href="https://github.com/cbw29512/GhostBrowser" target="_blank" rel="noopener">
+    View on GitHub
+  </a>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <span class="hero-badge">
+    <span class="pulse-dot"></span>
+    Open Source Research Platform
+  </span>
+
+  <h1>Browse Without<br/><em>Leaving Traces</em></h1>
+
+  <p class="hero-tagline">
+    Ghost Browser is an experimental, open-source secure browsing environment
+    built around one principle: every session should vanish completely when you're done.
+  </p>
+
+  <div class="hero-cta">
+    <a class="btn-primary" href="https://github.com/cbw29512/GhostBrowser" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.54 2.87 8.39 6.84 9.75.5.09.68-.22.68-.49v-1.71c-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.1-1.49-1.1-1.49-.9-.63.07-.62.07-.62 1 .07 1.52 1.05 1.52 1.05.88 1.55 2.32 1.1 2.88.84.09-.65.34-1.1.62-1.35-2.22-.26-4.55-1.14-4.55-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.4 9.4 0 0 1 12 7.07c.85 0 1.7.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49C19.13 20.65 22 16.8 22 12.26 22 6.58 17.52 2 12 2z"/></svg>
+      View on GitHub
+    </a>
+    <a class="btn-outline" href="https://github.com/cbw29512/GhostBrowser/blob/main/GHOST_MANIFESTO.md" target="_blank" rel="noopener">
+      Read the Manifesto →
+    </a>
+  </div>
+
+  <div class="hero-meta">
+    <div class="meta-stat">
+      <span class="meta-val">100%</span>
+      <span class="meta-label">Python</span>
+    </div>
+    <div class="meta-stat">
+      <span class="meta-val">MIT</span>
+      <span class="meta-label">License</span>
+    </div>
+    <div class="meta-stat">
+      <span class="meta-val">48</span>
+      <span class="meta-label">Commits</span>
+    </div>
+    <div class="meta-stat">
+      <span class="meta-val">0‑Day</span>
+      <span class="meta-label">Persistence</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ABOUT ─── -->
+<section id="about" class="surface">
+  <div class="wrap">
+    <span class="sec-label">What Is Ghost Browser</span>
+    <h2>A New Model for<br/>Private Browsing</h2>
+    <div class="about-grid">
+      <div class="about-copy reveal">
+        <p>
+          Modern browsers are <strong>designed to remember</strong> — cookies, cache, local storage,
+          session tokens. Ghost Browser takes the opposite approach: every browsing session runs
+          inside a <strong>controlled, disposable runtime</strong> that leaves no persistent
+          artifacts on the host system when it exits.
+        </p>
+        <p>
+          Built on Docker and Kasm containerization, Ghost Browser wraps the browser process inside
+          an isolated environment. An <strong>encrypted credential vault</strong> with per-domain
+          pinning means sensitive data never touches disk in plaintext, and
+          <strong>per-tile ad-blocking controls</strong> give granular control over what traffic
+          even reaches the container.
+        </p>
+        <p>
+          This isn't a daily-use browser replacement — it's a <strong>research and
+          experimentation platform</strong> for the security community to study, test, and advance
+          the science of ephemeral browsing architecture.
+        </p>
+      </div>
+      <div class="code-panel reveal">
+        <div class="code-panel-header">
+          <span class="code-dot red"></span>
+          <span class="code-dot yel"></span>
+          <span class="code-dot grn"></span>
+          <span class="code-panel-filename">session_lifecycle.py</span>
+        </div>
+        <div class="code-body">
+          <div><span class="ln">01</span><span class="cm"># Ghost Browser session manager</span></div>
+          <div><span class="ln">02</span><span class="kw">class</span> <span class="cls">GhostSession</span>:</div>
+          <div><span class="ln">03</span>&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">__init__</span>(self):</div>
+          <div><span class="ln">04</span>&nbsp;&nbsp;&nbsp;&nbsp;self.container_id = <span class="fn">spawn_container</span>()</div>
+          <div><span class="ln">05</span>&nbsp;&nbsp;&nbsp;&nbsp;self.vault = <span class="cls">EncryptedVault</span>(ephemeral=<span class="kw">True</span>)</div>
+          <div><span class="ln">06</span>&nbsp;&nbsp;&nbsp;&nbsp;self.ad_block = <span class="cls">TileBlocker</span>()</div>
+          <div><span class="ln">07</span>&nbsp;</div>
+          <div><span class="ln">08</span>&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">teardown</span>(self):</div>
+          <div><span class="ln">09</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># Nothing persists after this</span></div>
+          <div><span class="ln">10</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">destroy_container</span>(self.container_id)</div>
+          <div><span class="ln">11</span>&nbsp;&nbsp;&nbsp;&nbsp;self.vault.<span class="fn">wipe</span>()</div>
+          <div><span class="ln">12</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">clear_ram_artifacts</span>()</div>
+          <div><span class="ln">13</span>&nbsp;</div>
+          <div><span class="ln">14</span>&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">__exit__</span>(self, *args):</div>
+          <div><span class="ln">15</span>&nbsp;&nbsp;&nbsp;&nbsp;self.<span class="fn">teardown</span>() <span class="cm"># always</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PILLARS ─── -->
+<section id="pillars">
+  <div class="wrap">
+    <div class="pillars-header reveal">
+      <span class="sec-label">Core Design Pillars</span>
+      <h2>Built Around One Rule:<br/>Sessions Don't Survive</h2>
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar reveal">
+        <div class="pillar-icon">🔒</div>
+        <h3>Encrypted Credential Vault</h3>
+        <p>Per-session, per-domain credential storage using bank-grade encryption. Credentials are never written to disk in plaintext and are purged at teardown.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pillar-icon">🐳</div>
+        <h3>Docker Container Isolation</h3>
+        <p>Each browsing session runs inside a fresh Docker/Kasm container. The host filesystem is never touched by browser state, cookies, or cache data.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pillar-icon">🔗</div>
+        <h3>Domain Pinning</h3>
+        <p>Chrome's <code style="color:var(--accent);font-size:0.8em;">--host-rules</code> flag is used to enforce domain-level routing rules, preventing session data from leaking across untrusted origins.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pillar-icon">🛡️</div>
+        <h3>Per-Tile Ad Blocking</h3>
+        <p>Granular ad-block controls on a per-container tile basis. Block tracking scripts and ads in individual sessions without affecting others.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pillar-icon">💾</div>
+        <h3>RAM-First Architecture</h3>
+        <p>Session data lives in memory, not on disk. Ghost Browser's long-term vision prioritizes volatile storage strategies that evaporate with the process.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pillar-icon">🔬</div>
+        <h3>Open Research Platform</h3>
+        <p>MIT licensed and fully transparent. Every architectural decision is documented so security researchers can study, fork, and build upon the foundation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── USE CASES ─── -->
+<section id="use-cases" class="surface">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="sec-label">Who It's Built For</span>
+      <h2>Designed for the People<br/>Who Can't Afford Leaks</h2>
+      <p class="sec-desc">Ghost Browser targets a specific set of users whose work demands that sessions leave no trace.</p>
+    </div>
+    <div class="uc-grid">
+      <div class="uc-card reveal">
+        <span class="uc-num">01</span>
+        <div class="uc-body">
+          <h3>Security Researchers</h3>
+          <p>Investigate malicious URLs, phishing pages, and exploit kits without contaminating the host system. Each session is a clean, isolated forensic environment.</p>
+        </div>
+      </div>
+      <div class="uc-card reveal">
+        <span class="uc-num">02</span>
+        <div class="uc-body">
+          <h3>Privacy-Focused Professionals</h3>
+          <p>Journalists, lawyers, activists, and executives who need browsing sessions that are mathematically guaranteed not to persist on the host machine.</p>
+        </div>
+      </div>
+      <div class="uc-card reveal">
+        <span class="uc-num">03</span>
+        <div class="uc-body">
+          <h3>Security Architects & Developers</h3>
+          <p>Engineers studying browser isolation models, runtime container strategies, and privacy-preserving software design patterns for next-generation tools.</p>
+        </div>
+      </div>
+      <div class="uc-card reveal">
+        <span class="uc-num">04</span>
+        <div class="uc-body">
+          <h3>Students & Academics</h3>
+          <p>A fully transparent codebase for studying how ephemeral runtime environments work, with documented architecture and an active research roadmap.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ARCHITECTURE ─── -->
+<section id="architecture">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="sec-label">How It Works</span>
+      <h2>Layered Isolation Architecture</h2>
+      <p class="sec-desc">Ghost Browser stacks multiple isolation layers so no single failure exposes the host.</p>
+    </div>
+    <div class="arch-grid">
+      <div class="arch-layers reveal">
+        <div class="arch-row">
+          <span class="layer-badge lb-cyan">Host</span>
+          <div class="arch-row-text">
+            <h4>Python Launcher</h4>
+            <p>Session orchestration & Docker management</p>
+          </div>
+        </div>
+        <div class="arch-row">
+          <span class="layer-badge lb-green">Container</span>
+          <div class="arch-row-text">
+            <h4>Kasm / Docker Runtime</h4>
+            <p>Isolated, ephemeral browser environment</p>
+          </div>
+        </div>
+        <div class="arch-row">
+          <span class="layer-badge lb-cyan">Browser</span>
+          <div class="arch-row-text">
+            <h4>Chromium + Host-Rules</h4>
+            <p>Domain-pinned session with per-tile blocking</p>
+          </div>
+        </div>
+        <div class="arch-row">
+          <span class="layer-badge lb-amber">Vault</span>
+          <div class="arch-row-text">
+            <h4>Encrypted Credential Store</h4>
+            <p>In-session only — wiped at teardown</p>
+          </div>
+        </div>
+        <div class="arch-row">
+          <span class="layer-badge lb-purple">DB</span>
+          <div class="arch-row-text">
+            <h4>Alembic / SQLAlchemy</h4>
+            <p>Schema migrations for non-sensitive config</p>
+          </div>
+        </div>
+      </div>
+      <div class="stack-items reveal">
+        <div class="stack-item">
+          <h4>Runtime Isolation</h4>
+          <p>Kasm Workspaces provides a browser-in-container runtime accessed via a web interface. The container is spun up fresh per session and destroyed completely on exit.</p>
+          <div class="tags">
+            <span class="tag">Docker</span>
+            <span class="tag">Kasm</span>
+            <span class="tag green">Ephemeral</span>
+          </div>
+        </div>
+        <div class="stack-item">
+          <h4>Network & Trust Layer</h4>
+          <p>Chrome's <code style="font-family:monospace;font-size:0.85em;color:var(--accent);">--host-rules</code> flag enforces domain pinning. Combined with per-tile ad-block, outbound traffic is tightly scoped to only what the session explicitly needs.</p>
+          <div class="tags">
+            <span class="tag">Chromium</span>
+            <span class="tag amber">Host-Rules</span>
+            <span class="tag green">Ad Block</span>
+          </div>
+        </div>
+        <div class="stack-item">
+          <h4>Core Application</h4>
+          <p>The orchestration layer is pure Python — chosen for readability, extensibility, and the rich ecosystem of security and networking libraries available to researchers building on top of Ghost Browser.</p>
+          <div class="tags">
+            <span class="tag">Python 3</span>
+            <span class="tag">SQLAlchemy</span>
+            <span class="tag">Alembic</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ROADMAP ─── -->
+<section id="roadmap" class="surface">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="sec-label">Development Roadmap</span>
+      <h2>Where We're Headed</h2>
+      <p class="sec-desc">Ghost Browser is in active architecture and research phase. Here's the path forward.</p>
+    </div>
+    <div class="phase-grid">
+      <div class="phase active reveal">
+        <div class="phase-num">Phase 01</div>
+        <span class="phase-status status-active">In Progress</span>
+        <h3>Architecture & Research</h3>
+        <ul>
+          <li>Security model definition</li>
+          <li>Architecture documentation</li>
+          <li>Session lifecycle design</li>
+          <li>Container prototype</li>
+        </ul>
+      </div>
+      <div class="phase reveal">
+        <div class="phase-num">Phase 02</div>
+        <span class="phase-status status-planned">Planned</span>
+        <h3>Core Runtime</h3>
+        <ul>
+          <li>Full Docker integration</li>
+          <li>Credential vault v1</li>
+          <li>Session teardown engine</li>
+          <li>Domain pinning layer</li>
+        </ul>
+      </div>
+      <div class="phase reveal">
+        <div class="phase-num">Phase 03</div>
+        <span class="phase-status status-planned">Planned</span>
+        <h3>Privacy Hardening</h3>
+        <ul>
+          <li>RAM-first storage</li>
+          <li>Per-tile ad blocking</li>
+          <li>Traffic audit logging</li>
+          <li>Portable media support</li>
+        </ul>
+      </div>
+      <div class="phase reveal">
+        <div class="phase-num">Phase 04</div>
+        <span class="phase-status status-future">Future</span>
+        <h3>Research Platform</h3>
+        <ul>
+          <li>USB boot mode</li>
+          <li>Plugin architecture</li>
+          <li>Academic partnerships</li>
+          <li>Published research</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── GRANT CTA ─── -->
+<section id="cta">
+  <div class="cta-inner">
+    <span class="sec-label">Support the Project</span>
+    <h2>Fund Open-Source<br/>Privacy Research</h2>
+    <p class="sec-desc">
+      Ghost Browser is MIT-licensed and free forever. If you're a grant-maker, researcher,
+      or organization that believes privacy-preserving tooling should be open and accessible,
+      we'd love to connect.
+    </p>
+    <div class="cta-actions">
+      <a class="btn-primary" href="https://github.com/cbw29512/GhostBrowser" target="_blank" rel="noopener">
+        Explore the Codebase
+      </a>
+      <a class="btn-outline" href="https://github.com/cbw29512/GhostBrowser/blob/main/GHOST_MANIFESTO.md" target="_blank" rel="noopener">
+        Read the Manifesto
+      </a>
+      <a class="btn-outline" href="https://github.com/cbw29512/GhostBrowser/blob/main/ROADMAP.md" target="_blank" rel="noopener">
+        Full Roadmap →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <a class="footer-brand" href="#">👻 Ghost Browser</a>
+  <ul class="footer-links">
+    <li><a href="https://github.com/cbw29512/GhostBrowser" target="_blank" rel="noopener">GitHub</a></li>
+    <li><a href="https://github.com/cbw29512/GhostBrowser/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+    <li><a href="https://github.com/cbw29512/GhostBrowser/blob/main/GHOST_MANIFESTO.md" target="_blank" rel="noopener">Manifesto</a></li>
+    <li><a href="https://github.com/cbw29512/GhostBrowser/blob/main/ROADMAP.md" target="_blank" rel="noopener">Roadmap</a></li>
+  </ul>
+  <span class="footer-copy">© 2026 Chris Wilson · MIT License · Open Source</span>
+</footer>
+
+<script>
+  // ─── ANIMATED GRID CANVAS ───
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, dots = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COUNT = 80;
+  for (let i = 0; i < COUNT; i++) {
+    dots.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 1.5 + 0.5,
+    });
+  }
+
+  function drawFrame() {
+    ctx.clearRect(0, 0, W, H);
+    // Update & draw dots
+    for (const d of dots) {
+      d.x += d.vx; d.y += d.vy;
+      if (d.x < 0) d.x = W;
+      if (d.x > W) d.x = 0;
+      if (d.y < 0) d.y = H;
+      if (d.y > H) d.y = 0;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,200,240,0.6)';
+      ctx.fill();
+    }
+    // Draw connecting lines
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i + 1; j < dots.length; j++) {
+        const dx  = dots[i].x - dots[j].x;
+        const dy  = dots[i].y - dots[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 130) {
+          ctx.beginPath();
+          ctx.moveTo(dots[i].x, dots[i].y);
+          ctx.lineTo(dots[j].x, dots[j].y);
+          ctx.strokeStyle = `rgba(0,200,240,${0.18 * (1 - dist / 130)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+
+  // ─── SCROLL REVEAL ───
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        // Stagger siblings
+        const siblings = Array.from(e.target.parentElement.querySelectorAll('.reveal'));
+        const idx = siblings.indexOf(e.target);
+        setTimeout(() => e.target.classList.add('visible'), idx * 80);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
