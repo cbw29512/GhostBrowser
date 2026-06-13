@@ -2,7 +2,7 @@ import hashlib
 import secrets
 import base64
 import re
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 
 class VaultSecurity:
@@ -16,7 +16,7 @@ class VaultSecurity:
         if not re.search(r"[A-Z]", password): return False
         if not re.search(r"[a-z]", password): return False
         if not re.search(r"[0-9]", password): return False
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password): return False
+        if not re.search(r"[!@#$%^&*(),.?\\\":{}|<>]", password): return False
         return True
 
     @staticmethod
@@ -53,5 +53,8 @@ class VaultSecurity:
     @staticmethod
     def decrypt_data(token: str, key_hex: str) -> str:
         """Decrypts a Fernet token. Raises InvalidToken on wrong key or tampering."""
-        f = VaultSecurity._build_fernet(key_hex)
-        return f.decrypt(token.encode('utf-8')).decode('utf-8')
+        try:
+            f = VaultSecurity._build_fernet(key_hex)
+            return f.decrypt(token.encode('utf-8')).decode('utf-8')
+        except InvalidToken:
+            raise ValueError("Decryption failed: invalid token or wrong key")
