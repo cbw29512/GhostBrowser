@@ -1,138 +1,163 @@
-﻿import docker
 import logging
+import os
 import time
-from typing import Optional, Dict, Tuple
+from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse
 
-logging.basicConfig(level=logging.INFO)
+import docker
+from docker.errors import DockerException, NotFound
+
 logger = logging.getLogger("GhostEngine")
+
+MANAGED_LABEL = "ghost-browser-managed"
+DEFAULT_IMAGE = "selenium/standalone-chromium:latest"
+LOCAL_BIND_ADDRESS = "127.0.0.1"
 
 
 def extract_root_domain(url: str) -> str:
+    """Return a safe hostname for logging without paths, queries, or credentials."""
     try:
-        if not url.startswith(("http://", "https://")):
-            url = "https://" + url
-        hostname = urlparse(url).hostname or ""
+        normalized = url if url.startswith(("http://", "https://")) else f"https://{url}"
+        hostname = urlparse(normalized).hostname or "unknown"
         parts = hostname.lower().split(".")
         return ".".join(parts[-2:]) if len(parts) >= 2 else hostname
-    except Exception:
-        return ""
-
-
-def build_host_rules(root_domain: str) -> str:
-    return (
-        f"MAP * 0.0.0.0, "
-        f"EXCLUDE {root_domain}, "
-        f"EXCLUDE *.{root_domain}, "
-        f"EXCLUDE localhost, "
-        f"EXCLUDE 127.0.0.1"
-    )
+    except (TypeError, ValueError):
+        return "unknown"
 
 
 class ContainerManager:
-    def __init__(self):
+    """Create and destroy short-lived, loopback-only Selenium containers."""
+
+    def __init__(self) -> None:
         try:
             self.client = docker.from_env()
+            self.client.ping()
             logger.info("Connected to Docker Engine")
-        except Exception as e:
-            logger.error(f"Failed to connect: {e}")
+        except DockerException:
+            logger.exception("Failed to connect to Docker Engine")
             self.client = None
 
-    def _get_container_logs(self, container) -> str:
+    def _remove_stale_managed_containers(self) -> None:
+        """Remove only containers created by this application."""
+        if not self.client:
+            return
+
         try:
-            return container.logs(tail=20).decode("utf-8", errors="replace")
-        except Exception:
-            return "(could not read container logs)"
+            containers = self.client.containers.list(
+                all=True,
+                filters={"label": f"{MANAGED_LABEL}=true"},
+            )
+            for container in containers:
+                container.remove(force=True)
+        except DockerException:
+            logger.exception("Failed to remove stale GhostBrowser containers")
+
+    @staticmethod
+    def _read_loopback_port(ports_info: Dict, container_port: str) -> str:
+        """Return a published port only when Docker bound it to loopback."""
+        bindings = ports_info.get(container_port) or []
+        if not bindings:
+            raise RuntimeError(f"No binding found for {container_port}")
+
+        binding = bindings[0]
+        host_ip = binding.get("HostIp")
+        host_port = binding.get("HostPort")
+        if host_ip not in {LOCAL_BIND_ADDRESS, "::1"} or not host_port:
+            raise RuntimeError(f"Unsafe host binding for {container_port}: {host_ip}:{host_port}")
+        return str(host_port)
 
     def start_browser_session(
         self,
         target_url: str,
-        image: str = "selenium/standalone-chromium:latest" 
-    ) -> Tuple[Optional[Dict], str]:
+        image: Optional[str] = None,
+    ) -> Tuple[Optional[Dict[str, str]], str]:
+        """Start Selenium with no externally reachable VNC or WebDriver port."""
         if not self.client:
-            return None, "Docker client not connected."
+            return None, "Docker client is unavailable."
 
-        logger.info(f"Launching Selenium container for: {target_url}")
+        selected_image = image or os.getenv("GHOST_BROWSER_IMAGE", DEFAULT_IMAGE)
+        logger.info("Launching isolated browser for domain: %s", extract_root_domain(target_url))
+        self._remove_stale_managed_containers()
 
-        # --- Step 1: Clean up stale containers ---
-        try:
-            for c in self.client.containers.list(all=True, filters={"ancestor": image}):
-                c.remove(force=True)
-        except Exception:
-            pass
-
-        # --- Step 2: Launch Selenium Engine ---
         container = None
         try:
-            env = {
-                "SE_VNC_NO_PASSWORD": "1", 
-            }
-
             container = self.client.containers.run(
-                image=image,
+                image=selected_image,
                 detach=True,
                 shm_size="2g",
-                ports={"7900/tcp": None, "4444/tcp": None},
-                environment=env,
+                ports={
+                    "7900/tcp": (LOCAL_BIND_ADDRESS, None),
+                    "4444/tcp": (LOCAL_BIND_ADDRESS, None),
+                },
+                environment={"SE_VNC_NO_PASSWORD": "1"},
+                labels={MANAGED_LABEL: "true"},
+                security_opt=["no-new-privileges:true"],
+                cap_drop=["ALL"],
+                pids_limit=512,
             )
             time.sleep(3)
-
-        except Exception as e:
-            logger.error(f"Container launch failed: {e}")
-            return None, str(e)
-
-        # --- Step 3: Extract Both Ports ---
-        try:
             container.reload()
+
             if container.attrs["State"]["Status"] != "running":
-                return None, "Container exited immediately."
+                raise RuntimeError("Container exited immediately")
 
             ports_info = container.attrs["NetworkSettings"]["Ports"]
-            
-            vnc_port = ports_info.get("7900/tcp")[0]["HostPort"]
-            webdriver_port = ports_info.get("4444/tcp")[0]["HostPort"]
-            
-            logger.info(f"Container RUNNING | VNC: {vnc_port} | WebDriver: {webdriver_port}")
-            
-            return {
-                "id": container.id, 
-                "vnc_port": vnc_port, 
-                "webdriver_port": webdriver_port
-            }, "Success"
+            vnc_port = self._read_loopback_port(ports_info, "7900/tcp")
+            webdriver_port = self._read_loopback_port(ports_info, "4444/tcp")
 
-        except Exception as e:
-            if container:
-                try: container.remove(force=True)
-                except: pass
-            return None, f"Post-launch error: {e}"
+            logger.info("Container ready with loopback-only published ports")
+            return {
+                "id": container.id,
+                "vnc_port": vnc_port,
+                "webdriver_port": webdriver_port,
+            }, "Success"
+        except (DockerException, RuntimeError, KeyError, IndexError, TypeError):
+            logger.exception("Container launch or validation failed")
+            if container is not None:
+                try:
+                    container.remove(force=True)
+                except DockerException:
+                    logger.exception("Failed to clean up rejected container")
+            return None, "Secure browser container failed to start."
 
     def wait_for_ready(self, container_id: str, timeout: int = 30) -> bool:
         if not self.client:
             return False
+
         try:
             container = self.client.containers.get(container_id)
-            consecutive = 0
-            start = time.time()
-            while time.time() - start < timeout:
+            consecutive_running_checks = 0
+            started_at = time.monotonic()
+
+            while time.monotonic() - started_at < timeout:
                 container.reload()
                 status = container.attrs["State"]["Status"]
                 if status == "running":
-                    consecutive += 1
-                    if consecutive >= 2:
+                    consecutive_running_checks += 1
+                    if consecutive_running_checks >= 2:
                         return True
-                elif status in ("exited", "dead"):
+                elif status in {"exited", "dead"}:
                     return False
                 else:
-                    consecutive = 0
+                    consecutive_running_checks = 0
                 time.sleep(1)
             return False
-        except Exception:
+        except (DockerException, KeyError, NotFound):
+            logger.exception("Container readiness check failed")
             return False
 
-    def stop_session(self, container_id: str):
+    def stop_session(self, container_id: str) -> None:
+        if not self.client:
+            return
+
         try:
             container = self.client.containers.get(container_id)
+            if container.labels.get(MANAGED_LABEL) != "true":
+                logger.error("Refusing to remove unmanaged container %s", container_id[:12])
+                return
             container.remove(force=True)
-            logger.info(f"Session {container_id[:12]} destroyed. All data wiped.")
-        except Exception as e:
-            logger.error(f"Failed to stop {container_id}: {e}")
+            logger.info("Destroyed managed browser session %s", container_id[:12])
+        except NotFound:
+            logger.info("Browser session already absent: %s", container_id[:12])
+        except DockerException:
+            logger.exception("Failed to stop browser session %s", container_id[:12])
